@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from telegram import BotCommand, BotCommandScopeDefault, BotCommandScopeAllChatAdministrators
 from telegram.ext import Application, MessageHandler, CommandHandler, CallbackQueryHandler, filters
 from config import BOT_TOKEN
@@ -25,7 +26,7 @@ async def post_init(application: Application):
         BotCommand("purge_all", "Dọn dẹp nhóm"),
     ], scope=BotCommandScopeAllChatAdministrators())
 
-def main():
+async def main():
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     
     app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
@@ -54,7 +55,16 @@ def main():
     app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, anti_spam_handler))
 
     print("Bot Started! (Thành Quý Tech System)")
-    app.run_polling()
+    
+    # Khởi chạy bot bất đồng bộ thay thế cho app.run_polling() để sửa lỗi trên Render
+    async with app:
+        await app.updater.start_polling()
+        await app.start()
+        
+        # Giữ cho tiến trình luôn chạy ngầm liên tục
+        while True:
+            await asyncio.sleep(3600)
 
 if __name__ == '__main__':
-    main()
+    # Sử dụng asyncio để kích hoạt hàm main
+    asyncio.run(main())
