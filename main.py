@@ -30,18 +30,20 @@ async def main():
     logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
     
     app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
-
-    # Sửa đoạn đăng ký handler trong main.py thành:
+    
+    # --- HANDLERS ---
+    app.add_handler(CommandHandler("start", start_command))
+    app.add_handler(CallbackQueryHandler(button_handler))
+    
+    # Ưu tiên chạy hàm welcome trước khi tin nhắn hệ thống bị xóa
+    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome))
+    
+    # Sau khi xử lý chào mừng, tiến hành dọn dẹp tin nhắn hệ thống (vào/rời nhóm)
     app.add_handler(MessageHandler(
         filters.StatusUpdate.NEW_CHAT_MEMBERS | 
         filters.StatusUpdate.LEFT_CHAT_MEMBER, 
         clean_service_messages
     ))
-    
-    # --- HANDLERS ---
-    app.add_handler(CommandHandler("start", start_command))
-    app.add_handler(CallbackQueryHandler(button_handler))
-    app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome))
 
     # Lệnh Admin
     app.add_handler(CommandHandler("delete", cmd_delete))
@@ -51,7 +53,7 @@ async def main():
     app.add_handler(CommandHandler("purge_user", cmd_purge_user))
     app.add_handler(CommandHandler("purge_all", cmd_purge_all))
 
-    # Anti-Spam (Luôn đặt cuối cùng)
+    # Anti-Spam (Luôn đặt cuối cùng để không chặn nhầm lệnh Command)
     app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, anti_spam_handler))
 
     print("Bot Started! (Thành Quý Tech System)")
